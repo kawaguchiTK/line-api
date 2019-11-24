@@ -15,9 +15,9 @@ class CreateRemindsTable extends Migration
     {
         Schema::create('reminds', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('content');
-            $table->dateTime('remind_regist_time');
-            $table->dateTime('remind_execute_time');
+            $table->string('content')->nullable();
+            $table->dateTime('remind_regist_time')->nullable();
+            $table->dateTime('remind_execute_time')->nullable();
             $table->timestamps();
         });
     }
