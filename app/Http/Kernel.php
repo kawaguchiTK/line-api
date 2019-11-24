@@ -79,7 +79,7 @@ class Kernel extends HttpKernel
     ];
 
     protected $commands = [
-        \App\Console\Commands\RemindLineCommand::class,
+        //
     ];
 
     /**
@@ -91,7 +91,7 @@ class Kernel extends HttpKernel
 
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('command:remind_line')->everyMinute();
+        //
     }
     
 

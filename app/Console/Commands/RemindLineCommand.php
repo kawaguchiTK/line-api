@@ -39,6 +39,7 @@ class RemindLineCommand extends Command
      */
     public function handle()
     {
-        echo "テストコマンド実行\n";
+        Log::debug("テストコマンド実行");
+        // echo "テストコマンド実行\n";
     }
 }
