@@ -39,9 +39,28 @@ class LineBotController extends Controller
                     // おうむ返し
                     $replyToken = $event->getReplyToken();
                     $replyText = $event->getText();
-                    $lineBot->replyText($replyToken,$replyText);
+
+
+                    $receptionText =  "「" . $replyText  . "」ですね。何時間後にリマインドしますか？";
+
+
+
+                    $lineBot->replyText($replyToken,$receptionText);
                 }
 
-
             }
+
+            public function defineHour($requestHour)
+            {
+                // 数値のみにする(時間単位)
+                $requestHour = preg_replace('[^0-9]','',$requestHour);
+
+                $remindTime = Carbon::now()->addHours($requestHour);
+                return $remindTime;
+            }
+
+
+
+
+
 }
