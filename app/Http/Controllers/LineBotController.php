@@ -114,5 +114,4 @@ class LineBotController extends Controller
                 }
             }
 
-
 }
