@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Log;
 use App\Remind;
 use Carbon\Carbon;
 
-
 class RemindLineCommand extends Command
 {
     /**
@@ -41,18 +40,17 @@ class RemindLineCommand extends Command
      */
     public function handle()
     {
-        Log::debug("テストコマンド実行");
-        // $this->sendLine();
+        $this->checkRemind();
     }
 
-    public function sendLine()
+    public function sendLine($content)
     {
         $access_token = env('LINE_ACCESS_TOKEN');
 
         // メッセージ
         $messeage_data = [
         	"type" => "text",
-        	"text" => "メッセージ"
+        	"text" => $content
         ];
  
         // ポストデータ
@@ -74,7 +72,33 @@ class RemindLineCommand extends Command
         $result = curl_exec($ch);
         $result = json_decode($result);
         curl_close($ch);
+
     }
 
+    public function checkRemind()
+    {
+        $targetRemind = Remind::orderBy('id','desc')
+                                                 ->limit(1)
+                                                 ->first();
 
+        if ($targetRemind->remind_regist_time != null && $targetRemind->remind_execute_time == null) 
+        {
+            $now = Carbon::now();
+            $remindTime = new Carbon($targetRemind->remind_regist_time);
+            Log::debug($now);
+            Log::debug($remindTime);
+
+            if ($now >= $remindTime)
+            {
+                Log::debug('passed');
+                $this->sendLine($targetRemind->content);          
+                $targetRemind->remind_execute_time = $now;
+                $targetRemind->save();
+            } 
+        } else
+
+        Log::debug('false');
+        return false;
+    }
+    
 }
