@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use App\Remind;
 use Carbon\Carbon;
-use App\library\Common;
 use Illuminate\Support\Facades\DB;
 
 class RemindLineCommand extends Command
@@ -33,7 +32,6 @@ class RemindLineCommand extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->common = new Common();
     }
 
     /**
@@ -60,8 +58,7 @@ class RemindLineCommand extends Command
 
         foreach($targetReminds as $targetRemind)
         {
-            if (!$targetRemind->isEmpty() &&
-                $targetRemind->remind_regist_time != null &&
+            if ($targetRemind->remind_regist_time != null &&
                 $targetRemind->remind_execute_time == null
                 )
                 {
