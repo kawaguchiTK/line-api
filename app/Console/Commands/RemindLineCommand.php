@@ -43,6 +43,7 @@ class RemindLineCommand extends Command
      */
     public function handle()
     {
+        Log::debug('cron作動');
         $this->checkRemind();
     }
 
@@ -59,7 +60,7 @@ class RemindLineCommand extends Command
 
         foreach($targetReminds as $targetRemind)
         {
-            if (!empty($targetRemind) &&
+            if (!$targetRemind->isEmpty() &&
                 $targetRemind->remind_regist_time != null &&
                 $targetRemind->remind_execute_time == null
                 )
