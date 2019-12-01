@@ -4,55 +4,51 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Remind;
+use App\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use LINE\LINEBot;
-use LINE\LINEBot\HTTPClient\CurlHTTPClient;
 use LINE\LINEBot\Event\MessageEvent\TextMessage;
 use Carbon\Carbon;
+use App\library\Common;
 
 class LineBotController extends Controller
 {
+    public function __construct()
+    {
+        $this->common = new Common();
+    }
+
+
     public function parrot(Request $request)
     {
+        // linebotインスタンスの取得
+        $lineBot = $this->common->getLineBot();
+        // イベントの取得
+        $events = $this->common->getEvents($request,$lineBot);
 
-        // linebotクラスのインスタンス化
-        $httpClient = new CurlHTTPClient(env('LINE_ACCESS_TOKEN'));
-        $lineBot = new LINEBot($httpClient, ['channelSecret' => env('LINE_CHANNEL_SECRET')]);
-
-        // 署名の検証
-        $signature = $request->header('x-line-signature');
-
-        if (!$lineBot->validateSignature($request->getContent(), $signature)) {
-            abort(400, 'invalid signature');
-        }
-
-        // イベント(lineから送られた画像、テキストなどの情報)
-        $events = $lineBot->parseEventRequest($request->getContent(), $signature);
-        Log::debug($events);
-        // テキスト以外のはログ出力してスキップ
         foreach ($events as $event) {
             if (!($event instanceof TextMessage)) {
                 Log::debug('Non text message has come');
                 continue;
             }
 
-            // useridの取得　（未実装）
-            $userId = $event->getUserId();
-            Log::debug($userId);
+            // lineidの取得
+            $lineCode = $event->getUserId();
 
+            // user_idの取得
+            $userId = $this->getUserIdFromLineId ($lineCode);
 
             $replyToken = $event->getReplyToken();
             $replyText = $event->getText();
 
             // 最後に保存したリマインドを取得
-            $lastRemind = $this->getLastRemind();
+            $lastRemind = $this->getLastRemind($userId);
 
             // 一番初めの登録 or 次のリマインド登録
             if (empty($lastRemind) || isset($lastRemind->remind_execute_time))
             {
                 $returnText =  "「" . $replyText  . "」ですね。覚えました。大体、何分後にリマインドしますか？";
-                $this->saveRemindContent($replyText);
+                $this->saveRemindContent($replyText,$userId);
                 // リマインド内容を登録後、時間を入力していない場合
             } elseif (empty($lastRemind->remind_regist_time) && !$this->checkNum($replyText))
             {
@@ -73,10 +69,11 @@ class LineBotController extends Controller
         }
     }
 
-    public function saveRemindContent($replyText)
+    public function saveRemindContent($replyText,$userId)
     {
         $remind = new Remind();
         $remind->content = $replyText;
+        $remind->user_id = $userId;
         $remind->save();
     }
 
@@ -90,9 +87,9 @@ class LineBotController extends Controller
         $remind->save();
     }
 
-    public function getLastRemind()
+    public function getLastRemind($userId)
     {
-        $remind = DB::table('reminds')
+        $remind = Remind::where('user_id',$userId)
             ->orderBy('id', 'desc')
             ->limit(1)
             ->first();
@@ -108,4 +105,29 @@ class LineBotController extends Controller
             return false;
         }
     }
+
+    public function getUserIdFromLineId($lineCode)
+    {
+        $targetUser = User::where('line_code', $lineCode)
+                                ->first();
+        if(empty($targetUser))
+        {
+            // userの新規登録
+            $userId =$this->registNewUser($lineCode);
+            return $userId;
+        } else
+        {
+            return $targetUser->id;
+        }
+    }
+
+    public function registNewUser($lineCode)
+    {
+        $user = new User();
+        $user->line_code = $lineCode;
+        $user->save();
+        return $user->id;
+    }
+
+
 }
