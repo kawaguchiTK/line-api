@@ -43,20 +43,48 @@ class RemindLineCommand extends Command
         $this->checkRemind();
     }
 
+    public function checkRemind()
+    {
+        $targetRemind = Remind::orderBy('id', 'desc')
+            ->limit(1)
+            ->first();
+
+        if ($targetRemind->remind_regist_time != null && $targetRemind->remind_execute_time == null) {
+            $now = Carbon::now();
+            $remindTime = new Carbon($targetRemind->remind_regist_time);
+
+            if ($now >= $remindTime) {
+                Log::debug('該当リマインドあり');
+                // LIneへ通知
+                $this->sendLine($targetRemind->content);
+                $targetRemind->remind_execute_time = $now;
+                $targetRemind->save();
+            }
+        } else
+
+            Log::debug('該当リマインドなし');
+        return false;
+    }
+
     public function sendLine($content)
     {
         $access_token = env('LINE_ACCESS_TOKEN');
 
         // メッセージ
         $messeage_data = [
-        	"type" => "text",
-        	"text" => $content
+            "type" => "text",
+            "text" =>  "リマインド内容は「" . $content  . "」" . "ですよ！思い出しましたか？",
+        ];
+
+        $navigate_data = [
+            "type" => "text",
+            "text" =>  "リマインドしたい内容を教えてください！",
         ];
 
         // ポストデータ
         $post_data = [
-        	"to"       => env('TEST_USER_ID'),
-        	"messages" => [$messeage_data]
+            "to"       => env('TEST_USER_ID'),
+            "messages" => [$messeage_data, $navigate_data]
         ];
 
         // curl実行
@@ -64,41 +92,13 @@ class RemindLineCommand extends Command
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode( $post_data, JSON_UNESCAPED_UNICODE ));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data, JSON_UNESCAPED_UNICODE));
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        	'Content-Type: application/json; charser=UTF-8',
-        	'Authorization: Bearer ' . $access_token
+            'Content-Type: application/json; charser=UTF-8',
+            'Authorization: Bearer ' . $access_token
         ));
         $result = curl_exec($ch);
         $result = json_decode($result);
         curl_close($ch);
-
     }
-
-    public function checkRemind()
-    {
-        $targetRemind = Remind::orderBy('id','desc')
-                                                 ->limit(1)
-                                                 ->first();
-
-        if ($targetRemind->remind_regist_time != null && $targetRemind->remind_execute_time == null)
-        {
-            $now = Carbon::now();
-            $remindTime = new Carbon($targetRemind->remind_regist_time);
-            Log::debug($now);
-            Log::debug($remindTime);
-
-            if ($now >= $remindTime)
-            {
-                Log::debug('passed');
-                $this->sendLine($targetRemind->content);
-                $targetRemind->remind_execute_time = $now;
-                $targetRemind->save();
-            }
-        } else
-
-        Log::debug('false');
-        return false;
-    }
-
 }
