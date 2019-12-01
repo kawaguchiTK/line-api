@@ -49,7 +49,8 @@ class RemindLineCommand extends Command
             ->limit(1)
             ->first();
 
-        if ($targetRemind->remind_regist_time != null && $targetRemind->remind_execute_time == null) {
+        if ($targetRemind->remind_regist_time != null && $targetRemind->remind_execute_time == null)
+        {
             $now = Carbon::now();
             $remindTime = new Carbon($targetRemind->remind_regist_time);
 
@@ -59,11 +60,13 @@ class RemindLineCommand extends Command
                 $this->sendLine($targetRemind->content);
                 $targetRemind->remind_execute_time = $now;
                 $targetRemind->save();
+            } else
+            {
+                Log::debug('該当リマインドなし');
+                return false;
             }
-        } else
+        }
 
-            Log::debug('該当リマインドなし');
-        return false;
     }
 
     public function sendLine($content)

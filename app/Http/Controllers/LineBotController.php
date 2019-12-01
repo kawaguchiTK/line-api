@@ -29,13 +29,18 @@ class LineBotController extends Controller
 
         // イベント(lineから送られた画像、テキストなどの情報)
         $events = $lineBot->parseEventRequest($request->getContent(), $signature);
-
+        Log::debug($events);
         // テキスト以外のはログ出力してスキップ
         foreach ($events as $event) {
             if (!($event instanceof TextMessage)) {
                 Log::debug('Non text message has come');
                 continue;
             }
+
+            // useridの取得　（未実装）
+            $userId = $event->getUserId();
+            Log::debug($userId);
+
 
             $replyToken = $event->getReplyToken();
             $replyText = $event->getText();
