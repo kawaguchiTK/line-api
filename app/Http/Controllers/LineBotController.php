@@ -47,7 +47,7 @@ class LineBotController extends Controller
             // 一番初めの登録 or 次のリマインド登録
             if (empty($lastRemind) || isset($lastRemind->remind_execute_time))
             {
-                $returnText =  "「" . $replyText  . "」ですね。覚えました。大体、何分後にリマインドしますか？";
+                $returnText =  "「" . $replyText  . "」ですね。覚えました。大体、何分後にリマインドしますか？（数字だけ送ってくださいね）";
                 $this->saveRemindContent($replyText,$userId);
                 // リマインド内容を登録後、時間を入力していない場合
             } elseif (empty($lastRemind->remind_regist_time) && !$this->checkNum($replyText))
@@ -56,7 +56,7 @@ class LineBotController extends Controller
                 // リマインド内容を登録後、時間を入力した場合
             } elseif (!$lastRemind->remind_regist_time && $this->checkNum($replyText))
             {
-                $returnText =   "大体、".$replyText  . "分後ですね。了解しました。";
+                $returnText =   "大体、".$replyText  . "分後ですね。了解しました。" . $replyText  . ".分後にLineします。";
                 // リマインド時間を登録
                 $this->saveRemindRegistTime($lastRemind->id, $replyText);
             // 登録したリマインドが通知される前に登録しようとした場合
